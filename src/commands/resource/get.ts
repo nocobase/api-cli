@@ -1,5 +1,5 @@
 import { Command } from '@oclif/core';
-import { buildGetArgs, getFlags, runResourceCommand } from '../../lib/resource-command.js';
+import { buildGetArgs, getFlags, runResourceCommand } from '../../lib/resource-command.ts';
 
 export default class ResourceGet extends Command {
   static summary = 'Get a record from a resource';

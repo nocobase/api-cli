@@ -1,4 +1,4 @@
-import { executeRawApiRequest } from './api-client.js';
+import { executeRawApiRequest } from './api-client.ts';
 
 export type ResourceAction = 'list' | 'get' | 'create' | 'update' | 'destroy' | 'query';
 
@@ -141,7 +141,7 @@ function buildHeaders(action: ResourceAction, args: ResourceRequestArgs) {
 }
 
 export async function executeResourceRequest(options: {
-  serverName?: string;
+  envName?: string;
   baseUrl?: string;
   token?: string;
   action: ResourceAction;
@@ -150,7 +150,7 @@ export async function executeResourceRequest(options: {
   const path = `/${buildActionUrl(options.args.resource, options.action, options.args.sourceId)}`;
 
   return executeRawApiRequest({
-    serverName: options.serverName,
+    envName: options.envName,
     baseUrl: options.baseUrl,
     token: options.token,
     method: 'POST',

@@ -1,7 +1,8 @@
-import { getCurrentServerName, getServer, setServerRuntime } from './auth-store.js';
-import { generateRuntime } from './runtime-generator.js';
-import { hasRuntimeSync, saveRuntime } from './runtime-store.js';
-import { confirmAction, printInfo, printVerbose, printVerboseWarning, setVerboseMode, stopTask, updateTask } from './ui.js';
+import { getCurrentEnvName, getEnv, setEnvRuntime } from './auth-store.ts';
+import type { CliHomeScope } from './cli-home.ts';
+import { generateRuntime } from './runtime-generator.ts';
+import { hasRuntimeSync, saveRuntime } from './runtime-store.ts';
+import { confirmAction, printInfo, printVerbose, printVerboseWarning, setVerboseMode, stopTask, updateTask } from './ui.ts';
 
 const APP_RETRY_INTERVAL = 2000;
 const APP_RETRY_TIMEOUT = 120000;
@@ -9,10 +10,14 @@ const APP_RETRY_TIMEOUT = 120000;
 function readFlag(argv: string[], name: string) {
   const exact = `--${name}`;
   const prefix = `--${name}=`;
+  const alias = name === 'env' ? '-e' : name === 'scope' ? '-s' : undefined;
 
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === exact) {
+      return argv[index + 1];
+    }
+    if (alias && value === alias) {
       return argv[index + 1];
     }
     if (value.startsWith(prefix)) {
@@ -27,9 +32,14 @@ function hasBooleanFlag(argv: string[], name: string) {
   const exact = `--${name}`;
   const negated = `--no-${name}`;
   const prefix = `--${name}=`;
+  const alias = name === 'verbose' ? '-V' : undefined;
 
   for (const value of argv) {
     if (value === exact) {
+      return true;
+    }
+
+    if (alias && value === alias) {
       return true;
     }
 
@@ -71,7 +81,7 @@ function isRootHelp(argv: string[]) {
 
 function isBuiltinCommand(argv: string[]) {
   const commandToken = getCommandToken(argv);
-  return commandToken === 'server' || commandToken === 'resource';
+  return commandToken === 'env' || commandToken === 'resource';
 }
 
 async function requestJson(url: string, options: { method?: string; token?: string }) {
@@ -235,11 +245,11 @@ export async function ensureRuntimeFromArgv(argv: string[], options: { configFil
     return;
   }
 
-  const serverName = readFlag(argv, 'server') ?? (await getCurrentServerName());
-  const server = await getServer(serverName);
-  const baseUrl = readFlag(argv, 'base-url') ?? server?.baseUrl;
-  const token = readFlag(argv, 'token') ?? server?.auth?.accessToken;
-  const runtimeVersion = server?.runtime?.version;
+  const envName = readFlag(argv, 'env') ?? (await getCurrentEnvName());
+  const env = await getEnv(envName);
+  const baseUrl = readFlag(argv, 'base-url') ?? env?.baseUrl;
+  const token = readFlag(argv, 'token') ?? env?.auth?.accessToken;
+  const runtimeVersion = env?.runtime?.version;
 
   if (!commandToken || isRootHelp(argv)) {
     if (!baseUrl) {
@@ -254,9 +264,9 @@ export async function ensureRuntimeFromArgv(argv: string[], options: { configFil
   if (!baseUrl) {
     throw new Error(
       [
-        'No server is configured for runtime commands.',
-        'Run `nocobase server add --name <name> --base-url <url> --token <token>` first.',
-        'If you configure multiple servers later, switch with `nocobase server use <name>`.',
+        'No env is configured for runtime commands.',
+        'Run `nocobase env add --name <name> --base-url <url> --token <token>` first.',
+        'If you configure multiple environments later, switch with `nocobase env use <name>`.',
       ].join('\n'),
     );
   }
@@ -267,7 +277,7 @@ export async function ensureRuntimeFromArgv(argv: string[], options: { configFil
     const document = await fetchSwaggerSchema(baseUrl, token);
     const runtime = await generateRuntime(document, options.configFile, baseUrl);
     await saveRuntime(runtime);
-    await setServerRuntime(serverName, {
+    await setEnvRuntime(envName, {
       version: runtime.version,
       schemaHash: runtime.schemaHash,
       generatedAt: runtime.generatedAt,
@@ -277,24 +287,25 @@ export async function ensureRuntimeFromArgv(argv: string[], options: { configFil
   }
 }
 
-export async function updateServerRuntime(options: {
-  serverName?: string;
+export async function updateEnvRuntime(options: {
+  envName?: string;
   baseUrl?: string;
   token?: string;
   configFile: string;
   verbose?: boolean;
+  scope?: CliHomeScope;
 }) {
   setVerboseMode(Boolean(options.verbose));
-  const serverName = options.serverName ?? (await getCurrentServerName());
-  const server = await getServer(serverName);
-  const baseUrl = options.baseUrl ?? server?.baseUrl;
-  const token = options.token ?? server?.auth?.accessToken;
+  const envName = options.envName ?? (await getCurrentEnvName({ scope: options.scope }));
+  const env = await getEnv(envName, { scope: options.scope });
+  const baseUrl = options.baseUrl ?? env?.baseUrl;
+  const token = options.token ?? env?.auth?.accessToken;
 
   if (!baseUrl) {
     throw new Error(
       [
-        `Server "${serverName}" is missing a base URL.`,
-        'Update it with `nocobase server add --name <name> --base-url <url>` first.',
+        `Env "${envName}" is missing a base URL.`,
+        'Update it with `nocobase env add --name <name> --base-url <url>` first.',
       ].join('\n'),
     );
   }
@@ -304,12 +315,12 @@ export async function updateServerRuntime(options: {
     printVerbose(`Runtime source: ${baseUrl}`);
     const document = await fetchSwaggerSchema(baseUrl, token);
     const runtime = await generateRuntime(document, options.configFile, baseUrl);
-    await saveRuntime(runtime);
-    await setServerRuntime(serverName, {
+    await saveRuntime(runtime, { scope: options.scope });
+    await setEnvRuntime(envName, {
       version: runtime.version,
       schemaHash: runtime.schemaHash,
       generatedAt: runtime.generatedAt,
-    });
+    }, { scope: options.scope });
     return runtime;
   } finally {
     stopTask();

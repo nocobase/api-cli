@@ -7,7 +7,7 @@
  * For more information, please refer to: https://www.nocobase.com/agreement.
  */
 
-import { postProcessorRegistry } from '../lib/post-processors.js';
+import { postProcessorRegistry } from '../lib/post-processors.ts';
 
 function toArray(value: any) {
   if (Array.isArray(value)) {

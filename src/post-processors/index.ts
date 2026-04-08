@@ -7,8 +7,8 @@
  * For more information, please refer to: https://www.nocobase.com/agreement.
  */
 
-import { registerDataModelingPostProcessors } from './data-modeling.js';
-import { registerDataSourceManagerPostProcessors } from './data-source-manager.js';
+import { registerDataModelingPostProcessors } from './data-modeling.ts';
+import { registerDataSourceManagerPostProcessors } from './data-source-manager.ts';
 
 let initialized = false;
 

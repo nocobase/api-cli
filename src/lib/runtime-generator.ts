@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
-import { loadBuildConfig } from './build-config.js';
-import type { GeneratedOperation, GeneratedParameter } from './generated-command.js';
-import { toKebabCase, toLogicalActionName, toLogicalResourceName, toResourceSegments } from './naming.js';
-import { collectOperations, type OpenApiDocument } from './openapi.js';
-import type { StoredRuntime } from './runtime-store.js';
+import { loadBuildConfig } from './build-config.ts';
+import type { GeneratedOperation, GeneratedParameter } from './generated-command.ts';
+import { toKebabCase, toLogicalActionName, toLogicalResourceName, toResourceSegments } from './naming.ts';
+import { collectOperations, type OpenApiDocument } from './openapi.ts';
+import type { StoredRuntime } from './runtime-store.ts';
 
-const RESERVED_FLAG_NAMES = new Set(['base-url', 'server', 'token', 'json-output', 'body', 'body-file']);
+const RESERVED_FLAG_NAMES = new Set(['base-url', 'env', 'token', 'json-output', 'body', 'body-file']);
 
 function matchesPattern(value: string, pattern: string) {
   if (!value) {

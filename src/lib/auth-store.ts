@@ -1,8 +1,9 @@
 import { promises as fs } from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import type { CliHomeScope } from './cli-home.ts';
+import { resolveCliHomeDir } from './cli-home.ts';
 
-export interface ServerConfigEntry {
+export interface EnvConfigEntry {
   baseUrl?: string;
   auth?: {
     type: 'token' | 'oauth';
@@ -17,110 +18,118 @@ export interface ServerConfigEntry {
 }
 
 export interface AuthConfig {
-  currentServer?: string;
-  servers: Record<string, ServerConfigEntry>;
+  currentEnv?: string;
+  envs: Record<string, EnvConfigEntry>;
 }
 
 const DEFAULT_CONFIG: AuthConfig = {
-  currentServer: 'default',
-  servers: {},
+  currentEnv: 'default',
+  envs: {},
 };
 
-function getConfigFile() {
-  return path.join(process.env.NOCOBASE_CLI_HOME || os.homedir(), '.nocobase-cli', 'config.json');
+export interface AuthStoreOptions {
+  scope?: CliHomeScope;
 }
 
-export async function loadAuthConfig(): Promise<AuthConfig> {
+function getConfigFile(options: AuthStoreOptions = {}) {
+  return path.join(resolveCliHomeDir(options.scope), 'config.json');
+}
+
+export async function loadAuthConfig(options: AuthStoreOptions = {}): Promise<AuthConfig> {
   try {
-    const content = await fs.readFile(getConfigFile(), 'utf8');
+    const content = await fs.readFile(getConfigFile(options), 'utf8');
     const parsed = JSON.parse(content) as AuthConfig;
     return {
-      currentServer: parsed.currentServer || 'default',
-      servers: parsed.servers || {},
+      currentEnv: parsed.currentEnv || 'default',
+      envs: parsed.envs || {},
     };
   } catch (error) {
     return DEFAULT_CONFIG;
   }
 }
 
-export async function saveAuthConfig(config: AuthConfig) {
-  const filePath = getConfigFile();
+export async function saveAuthConfig(config: AuthConfig, options: AuthStoreOptions = {}) {
+  const filePath = getConfigFile(options);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(config, null, 2));
 }
 
-export async function listServers() {
-  const config = await loadAuthConfig();
+export async function listEnvs(options: AuthStoreOptions = {}) {
+  const config = await loadAuthConfig(options);
   return {
-    currentServer: config.currentServer || 'default',
-    servers: config.servers,
+    currentEnv: config.currentEnv || 'default',
+    envs: config.envs,
   };
 }
 
-export async function getCurrentServerName() {
-  const config = await loadAuthConfig();
-  return config.currentServer || 'default';
+export async function getCurrentEnvName(options: AuthStoreOptions = {}) {
+  const config = await loadAuthConfig(options);
+  return config.currentEnv || 'default';
 }
 
-export async function setCurrentServer(serverName: string) {
-  const config = await loadAuthConfig();
-  if (!config.servers[serverName]) {
-    throw new Error(`Server "${serverName}" is not configured`);
+export async function setCurrentEnv(envName: string, options: AuthStoreOptions = {}) {
+  const config = await loadAuthConfig(options);
+  if (!config.envs[envName]) {
+    throw new Error(`Env "${envName}" is not configured`);
   }
-  config.currentServer = serverName;
-  await saveAuthConfig(config);
+  config.currentEnv = envName;
+  await saveAuthConfig(config, options);
 }
 
-export async function getServer(serverName?: string) {
-  const config = await loadAuthConfig();
-  const resolved = serverName || config.currentServer || 'default';
-  return config.servers[resolved];
+export async function getEnv(envName?: string, options: AuthStoreOptions = {}) {
+  const config = await loadAuthConfig(options);
+  const resolved = envName || config.currentEnv || 'default';
+  return config.envs[resolved];
 }
 
-export async function upsertServer(serverName: string, baseUrl: string, accessToken: string) {
-  const config = await loadAuthConfig();
-  config.servers[serverName] = {
-    ...(config.servers[serverName] ?? {}),
+export async function upsertEnv(envName: string, baseUrl: string, accessToken: string, options: AuthStoreOptions = {}) {
+  const config = await loadAuthConfig(options);
+  config.envs[envName] = {
+    ...(config.envs[envName] ?? {}),
     baseUrl,
     auth: {
       type: 'token',
       accessToken,
     },
   };
-  config.currentServer = serverName;
-  await saveAuthConfig(config);
+  config.currentEnv = envName;
+  await saveAuthConfig(config, options);
 }
 
-export async function setServerRuntime(serverName: string, runtime: ServerConfigEntry['runtime']) {
-  const config = await loadAuthConfig();
-  const current = config.servers[serverName] ?? {};
-  config.servers[serverName] = {
+export async function setEnvRuntime(
+  envName: string,
+  runtime: EnvConfigEntry['runtime'],
+  options: AuthStoreOptions = {},
+) {
+  const config = await loadAuthConfig(options);
+  const current = config.envs[envName] ?? {};
+  config.envs[envName] = {
     ...current,
     runtime,
   };
-  config.currentServer = serverName;
-  await saveAuthConfig(config);
+  config.currentEnv = envName;
+  await saveAuthConfig(config, options);
 }
 
-export async function removeServer(serverName: string) {
-  const config = await loadAuthConfig();
+export async function removeEnv(envName: string, options: AuthStoreOptions = {}) {
+  const config = await loadAuthConfig(options);
 
-  if (!config.servers[serverName]) {
-    throw new Error(`Server "${serverName}" is not configured`);
+  if (!config.envs[envName]) {
+    throw new Error(`Env "${envName}" is not configured`);
   }
 
-  delete config.servers[serverName];
+  delete config.envs[envName];
 
-  if (config.currentServer === serverName) {
-    const nextServer = Object.keys(config.servers).sort()[0];
-    config.currentServer = nextServer ?? 'default';
+  if (config.currentEnv === envName) {
+    const nextEnv = Object.keys(config.envs).sort()[0];
+    config.currentEnv = nextEnv ?? 'default';
   }
 
-  await saveAuthConfig(config);
+  await saveAuthConfig(config, options);
 
   return {
-    removed: serverName,
-    currentServer: config.currentServer || 'default',
-    hasServers: Object.keys(config.servers).length > 0,
+    removed: envName,
+    currentEnv: config.currentEnv || 'default',
+    hasEnvs: Object.keys(config.envs).length > 0,
   };
 }

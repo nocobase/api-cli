@@ -1,8 +1,8 @@
 import {Command, Flags} from '@oclif/core';
 import type {Interfaces} from '@oclif/core';
-import {executeApiRequest} from './api-client.js';
-import {applyPostProcessor} from './post-processors.js';
-import {registerPostProcessors} from '../post-processors/index.js';
+import {executeApiRequest} from './api-client.ts';
+import {applyPostProcessor} from './post-processors.ts';
+import {registerPostProcessors} from '../post-processors/index.ts';
 
 export interface GeneratedParameter {
   name: string;
@@ -84,9 +84,9 @@ export function createGeneratedFlags(operation: GeneratedOperation): Interfaces.
       description: 'Show detailed progress output',
       default: false,
     }),
-    server: Flags.string({
-      char: 's',
-      description: 'Server name',
+    env: Flags.string({
+      char: 'e',
+      description: 'Environment name',
     }),
     token: Flags.string({
       char: 't',
@@ -130,7 +130,7 @@ export abstract class GeneratedApiCommand extends Command {
     const {flags} = await this.parse(ctor);
 
     const response = await executeApiRequest({
-      serverName: flags.server,
+      envName: flags.env,
       baseUrl: flags['base-url'],
       token: flags.token,
       flags,

@@ -1,7 +1,7 @@
 import { Command, Flags } from '@oclif/core';
 import type { Interfaces } from '@oclif/core';
-import { executeResourceRequest, type ResourceAction, type ResourceRequestArgs } from './resource-request.js';
-import { setVerboseMode } from './ui.js';
+import { executeResourceRequest, type ResourceAction, type ResourceRequestArgs } from './resource-request.ts';
+import { setVerboseMode } from './ui.ts';
 
 function parseJson<T>(value: string, flagName: string): T {
   try {
@@ -109,9 +109,9 @@ export const resourceBaseFlags = {
     description: 'Show detailed progress output',
     default: false,
   }),
-  server: Flags.string({
-    char: 's',
-    description: 'Server name',
+  env: Flags.string({
+    char: 'e',
+    description: 'Environment name',
   }),
   token: Flags.string({
     char: 't',
@@ -376,7 +376,7 @@ export async function runResourceCommand(
   setVerboseMode(Boolean(flags.verbose));
 
   const response = await executeResourceRequest({
-    serverName: flags.server,
+    envName: flags.env,
     baseUrl: flags['base-url'],
     token: flags.token,
     action,

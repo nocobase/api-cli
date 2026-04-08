@@ -1,0 +1,60 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Command, Flags } from '@oclif/core';
+import { updateEnvRuntime } from '../../lib/bootstrap.ts';
+import { formatCliHomeScope, type CliHomeScope } from '../../lib/cli-home.ts';
+import { failTask, startTask, succeedTask } from '../../lib/ui.ts';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export default class EnvUpdate extends Command {
+  static summary = 'Update commands for an environment from swagger:get';
+  static id = 'env update';
+
+  static flags = {
+    verbose: Flags.boolean({
+      description: 'Show detailed progress output',
+      default: false,
+    }),
+    env: Flags.string({
+      char: 'e',
+      description: 'Environment name',
+    }),
+    scope: Flags.string({
+      char: 's',
+      description: 'Config scope',
+      options: ['project', 'global'],
+    }),
+    'base-url': Flags.string({
+      description: 'NocoBase API base URL override',
+    }),
+    token: Flags.string({
+      char: 't',
+      description: 'Bearer token override',
+    }),
+  };
+
+  async run(): Promise<void> {
+    const { flags } = await this.parse(EnvUpdate);
+    const scope = flags.scope as Exclude<CliHomeScope, 'auto'> | undefined;
+    const envLabel = flags.env ?? 'current';
+
+    startTask(`Updating env runtime: ${envLabel}${scope ? ` (${formatCliHomeScope(scope)})` : ''}`);
+
+    try {
+      const runtime = await updateEnvRuntime({
+        envName: flags.env,
+        scope,
+        baseUrl: flags['base-url'],
+        token: flags.token,
+        configFile: path.join(path.dirname(path.dirname(path.dirname(__dirname))), 'nocobase-cli.config.json'),
+        verbose: flags.verbose,
+      });
+
+      succeedTask(`Updated env "${envLabel}" to runtime "${runtime.version}"${scope ? ` in ${formatCliHomeScope(scope)} scope` : ''}.`);
+    } catch (error) {
+      failTask(`Failed to update env "${envLabel}".`);
+      throw error;
+    }
+  }
+}

@@ -1,9 +1,11 @@
 import { Command, Flags } from '@oclif/core';
-import { upsertServer } from '../../lib/auth-store.js';
-import { isInteractiveTerminal, printVerbose, setVerboseMode, promptText } from '../../lib/ui.js';
+import { upsertEnv } from '../../lib/auth-store.ts';
+import { formatCliHomeScope, type CliHomeScope } from '../../lib/cli-home.ts';
+import { isInteractiveTerminal, printVerbose, setVerboseMode, promptText } from '../../lib/ui.ts';
 
-export default class ServerAdd extends Command {
-  static summary = 'Add or update a NocoBase server';
+export default class EnvAdd extends Command {
+  static summary = 'Add or update a NocoBase environment';
+  static id = 'env add';
 
   static flags = {
     verbose: Flags.boolean({
@@ -11,8 +13,13 @@ export default class ServerAdd extends Command {
       default: false,
     }),
     name: Flags.string({
-      description: 'Server name',
+      description: 'Environment name',
       default: 'default',
+    }),
+    scope: Flags.string({
+      char: 's',
+      description: 'Config scope',
+      options: ['project', 'global'],
     }),
     'base-url': Flags.string({
       description: 'NocoBase API base URL, for example http://localhost:13000/api',
@@ -24,9 +31,10 @@ export default class ServerAdd extends Command {
   };
 
   async run(): Promise<void> {
-    const { flags } = await this.parse(ServerAdd);
+    const { flags } = await this.parse(EnvAdd);
     setVerboseMode(flags.verbose);
     const name = flags.name || 'default';
+    const scope = flags.scope as Exclude<CliHomeScope, 'auto'> | undefined;
     const baseUrl =
       flags['base-url'] ||
       (isInteractiveTerminal()
@@ -44,8 +52,8 @@ export default class ServerAdd extends Command {
       this.error('Missing token. Pass `--token <token>` or run in a TTY to enter it interactively.');
     }
 
-    printVerbose(`Saving server "${name}" with base URL ${baseUrl}`);
-    await upsertServer(name, baseUrl, token);
-    this.log(`Saved server "${name}" and set it as current.`);
+    printVerbose(`Saving env "${name}" with base URL ${baseUrl}`);
+    await upsertEnv(name, baseUrl, token, { scope });
+    this.log(`Saved env "${name}" and set it as current${scope ? ` in ${formatCliHomeScope(scope)} scope` : ''}.`);
   }
 }

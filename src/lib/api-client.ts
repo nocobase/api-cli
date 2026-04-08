@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs';
-import { getCurrentServerName, getServer } from './auth-store.js';
+import { getCurrentEnvName, getEnv } from './auth-store.ts';
 
 export interface RequestParameter {
   name: string;
@@ -21,7 +21,7 @@ export interface RequestOperation {
 }
 
 export interface RequestOptions {
-  serverName?: string;
+  envName?: string;
   baseUrl?: string;
   token?: string;
   flags: Record<string, any>;
@@ -29,7 +29,7 @@ export interface RequestOptions {
 }
 
 export interface RawRequestOptions {
-  serverName?: string;
+  envName?: string;
   baseUrl?: string;
   token?: string;
   method: string;
@@ -44,17 +44,17 @@ function normalizeBaseUrl(baseUrl: string) {
 }
 
 async function resolveServerRequestTarget(options: {
-  serverName?: string;
+  envName?: string;
   baseUrl?: string;
   token?: string;
 }) {
-  const serverName = options.serverName ?? (await getCurrentServerName());
-  const server = await getServer(serverName);
-  const baseUrl = options.baseUrl ?? server?.baseUrl;
-  const token = options.token ?? server?.auth?.accessToken;
+  const envName = options.envName ?? (await getCurrentEnvName());
+  const env = await getEnv(envName);
+  const baseUrl = options.baseUrl ?? env?.baseUrl;
+  const token = options.token ?? env?.auth?.accessToken;
 
   if (!baseUrl) {
-    throw new Error('Missing base URL. Use --base-url or configure one with `nocobase server add`.');
+    throw new Error('Missing base URL. Use --base-url or configure one with `nocobase env add`.');
   }
 
   return { baseUrl, token };

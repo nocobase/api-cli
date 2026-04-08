@@ -1,4 +1,4 @@
-import type {GeneratedOperation} from './generated-command.js';
+import type {GeneratedOperation} from './generated-command.ts';
 
 export interface PostProcessorContext {
   flags: Record<string, unknown>;

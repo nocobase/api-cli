@@ -32,8 +32,8 @@
     "dirname": "nocobase-cli",
     "topicSeparator": " ",
     "topics": {
-      "server": {
-        "description": "Manage NocoBase server connections and update command runtimes."
+      "env": {
+        "description": "Manage NocoBase project environments and update command runtimes."
       },
       "resource": {
         "description": "Work with generic collection resources."
@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@types/node": "^18.19.130",
-    "ts-node": "^10.9.2"
+    "tsx": "^4.20.6"
   },
   "repository": {
     "type": "git",

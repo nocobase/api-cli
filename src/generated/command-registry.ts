@@ -1,30 +1,33 @@
 import { Command } from '@oclif/core';
-import ResourceCreate from '../commands/resource/create.js';
-import ResourceDestroy from '../commands/resource/destroy.js';
-import ResourceGet from '../commands/resource/get.js';
-import Resource from '../commands/resource/index.js';
-import ResourceList from '../commands/resource/list.js';
-import ResourceQuery from '../commands/resource/query.js';
-import ResourceUpdate from '../commands/resource/update.js';
-import ServerAdd from '../commands/server/add.js';
-import Server from '../commands/server/index.js';
-import ServerList from '../commands/server/list.js';
-import ServerRemove from '../commands/server/remove.js';
-import ServerUpdate from '../commands/server/update.js';
-import ServerUse from '../commands/server/use.js';
-import { getCurrentServerName, getServer } from '../lib/auth-store.js';
-import { createGeneratedFlags, GeneratedApiCommand } from '../lib/generated-command.js';
-import { toKebabCase } from '../lib/naming.js';
-import { loadRuntimeSync } from '../lib/runtime-store.js';
+import EnvAdd from '../commands/env/add.ts';
+import Env from '../commands/env/index.ts';
+import EnvList from '../commands/env/list.ts';
+import EnvRemove from '../commands/env/remove.ts';
+import EnvUpdate from '../commands/env/update.ts';
+import EnvUse from '../commands/env/use.ts';
+import ResourceCreate from '../commands/resource/create.ts';
+import ResourceDestroy from '../commands/resource/destroy.ts';
+import ResourceGet from '../commands/resource/get.ts';
+import Resource from '../commands/resource/index.ts';
+import ResourceList from '../commands/resource/list.ts';
+import ResourceQuery from '../commands/resource/query.ts';
+import ResourceUpdate from '../commands/resource/update.ts';
+import { getCurrentEnvName, getEnv } from '../lib/auth-store.ts';
+import { createGeneratedFlags, GeneratedApiCommand } from '../lib/generated-command.ts';
+import { toKebabCase } from '../lib/naming.ts';
+import { loadRuntimeSync } from '../lib/runtime-store.ts';
 
-function readServerName(argv: string[]) {
+function readEnvName(argv: string[]) {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
-    if (token === '--server') {
+    if (token === '--env') {
       return argv[index + 1];
     }
-    if (token.startsWith('--server=')) {
-      return token.slice('--server='.length);
+    if (token === '-e') {
+      return argv[index + 1];
+    }
+    if (token.startsWith('--env=')) {
+      return token.slice('--env='.length);
     }
   }
 
@@ -53,12 +56,12 @@ function createRuntimeIndexCommand(commandId: string, operation: any) {
 }
 
 const registry: Record<string, any> = {
-  server: Server,
-  'server:add': ServerAdd,
-  'server:list': ServerList,
-  'server:remove': ServerRemove,
-  'server:update': ServerUpdate,
-  'server:use': ServerUse,
+  env: Env,
+  'env:add': EnvAdd,
+  'env:list': EnvList,
+  'env:remove': EnvRemove,
+  'env:update': EnvUpdate,
+  'env:use': EnvUse,
   resource: Resource,
   'resource:create': ResourceCreate,
   'resource:destroy': ResourceDestroy,
@@ -68,9 +71,9 @@ const registry: Record<string, any> = {
   'resource:update': ResourceUpdate,
 };
 
-const serverName = readServerName(process.argv.slice(2)) ?? (await getCurrentServerName());
-const server = await getServer(serverName);
-const runtime = loadRuntimeSync(server?.runtime?.version);
+const envName = readEnvName(process.argv.slice(2)) ?? (await getCurrentEnvName());
+const env = await getEnv(envName);
+const runtime = loadRuntimeSync(env?.runtime?.version);
 
 for (const operation of runtime?.commands ?? []) {
   const commandSegments = operation.commandId.split(' ');
