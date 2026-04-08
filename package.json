@@ -1,6 +1,6 @@
 {
-  "name": "nocobase-cli",
-  "version": "2.1.0-alpha.13",
+  "name": "nocobase",
+  "version": "0.1.2",
   "description": "NocoBase CLI",
   "type": "module",
   "main": "dist/generated/command-registry.js",
@@ -18,10 +18,10 @@
     "dist"
   ],
   "bin": {
-    "nocobase-api": "./bin/run.js"
+    "nocobase": "./bin/run.js"
   },
   "oclif": {
-    "bin": "nocobase-api",
+    "bin": "nocobase",
     "additionalHelpFlags": [
       "-h"
     ],
@@ -45,12 +45,12 @@
     "@oclif/core": "^4.10.4",
     "openapi-types": "^12.1.3",
     "ora": "^8.2.0",
-    "picocolors": "^1.1.1"
+    "picocolors": "^1.1.1",
+    "typescript": "^6.0.2"
   },
   "devDependencies": {
     "@types/node": "^18.19.130",
-    "ts-node": "^10.9.2",
-    "typescript": "^6.0.2"
+    "ts-node": "^10.9.2"
   },
   "repository": {
     "type": "git",

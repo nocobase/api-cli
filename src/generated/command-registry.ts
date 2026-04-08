@@ -1,19 +1,19 @@
 import { Command } from '@oclif/core';
-import Server from '../commands/server/index.js';
+import ResourceCreate from '../commands/resource/create.js';
+import ResourceDestroy from '../commands/resource/destroy.js';
+import ResourceGet from '../commands/resource/get.js';
+import Resource from '../commands/resource/index.js';
+import ResourceList from '../commands/resource/list.js';
+import ResourceQuery from '../commands/resource/query.js';
+import ResourceUpdate from '../commands/resource/update.js';
 import ServerAdd from '../commands/server/add.js';
+import Server from '../commands/server/index.js';
 import ServerList from '../commands/server/list.js';
 import ServerRemove from '../commands/server/remove.js';
 import ServerUpdate from '../commands/server/update.js';
 import ServerUse from '../commands/server/use.js';
-import Resource from '../commands/resource/index.js';
-import ResourceCreate from '../commands/resource/create.js';
-import ResourceDestroy from '../commands/resource/destroy.js';
-import ResourceGet from '../commands/resource/get.js';
-import ResourceList from '../commands/resource/list.js';
-import ResourceQuery from '../commands/resource/query.js';
-import ResourceUpdate from '../commands/resource/update.js';
-import { createGeneratedFlags, GeneratedApiCommand } from '../lib/generated-command.js';
 import { getCurrentServerName, getServer } from '../lib/auth-store.js';
+import { createGeneratedFlags, GeneratedApiCommand } from '../lib/generated-command.js';
 import { toKebabCase } from '../lib/naming.js';
 import { loadRuntimeSync } from '../lib/runtime-store.js';
 
@@ -47,7 +47,7 @@ function createRuntimeIndexCommand(commandId: string, operation: any) {
     static description = operation.resourceDescription;
 
     async run(): Promise<void> {
-      this.log(`Use \`nocobase-api ${commandId} --help\` to view available subcommands.`);
+      this.log(`Use \`nocobase ${commandId} --help\` to view available subcommands.`);
     }
   };
 }

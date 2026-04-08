@@ -9,6 +9,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-/.nocobase-api-cli/
+/.nocobase-cli/
 .env
 .env.*
+/yarn.lock

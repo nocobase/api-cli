@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { loadBuildConfig } from './build-config.js';
+import type { GeneratedOperation, GeneratedParameter } from './generated-command.js';
 import { toKebabCase, toLogicalActionName, toLogicalResourceName, toResourceSegments } from './naming.js';
 import { collectOperations, type OpenApiDocument } from './openapi.js';
-import type { GeneratedOperation, GeneratedParameter } from './generated-command.js';
 import type { StoredRuntime } from './runtime-store.js';
 
 const RESERVED_FLAG_NAMES = new Set(['base-url', 'server', 'token', 'json-output', 'body', 'body-file']);
@@ -227,7 +227,7 @@ function formatFlagExample(parameter: GeneratedParameter) {
 
 function buildExamples(commandId: string, operation: { parameters: GeneratedParameter[]; hasBody?: boolean }) {
   const requiredFlags = operation.parameters.filter((parameter) => parameter.required).map(formatFlagExample);
-  const examples = [`nocobase-api ${commandId}${requiredFlags.length ? ` ${requiredFlags.join(' ')}` : ''}`];
+  const examples = [`nocobase ${commandId}${requiredFlags.length ? ` ${requiredFlags.join(' ')}` : ''}`];
   const firstOptional = operation.parameters.find((parameter) => !parameter.required);
 
   if (firstOptional) {

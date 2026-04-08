@@ -1,5 +1,5 @@
-import {promises as fs} from 'node:fs';
-import {getCurrentServerName, getServer} from './auth-store.js';
+import { promises as fs } from 'node:fs';
+import { getCurrentServerName, getServer } from './auth-store.js';
 
 export interface RequestParameter {
   name: string;
@@ -54,7 +54,7 @@ async function resolveServerRequestTarget(options: {
   const token = options.token ?? server?.auth?.accessToken;
 
   if (!baseUrl) {
-    throw new Error('Missing base URL. Use --base-url or configure one with `nocobase-api server add`.');
+    throw new Error('Missing base URL. Use --base-url or configure one with `nocobase server add`.');
   }
 
   return { baseUrl, token };

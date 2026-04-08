@@ -6,3 +6,5 @@
 /tsconfig.json
 /build.config.ts
 /.gitignore
+/yarn.lock
+/pnpm-lock.yaml

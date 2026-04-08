@@ -1,7 +1,6 @@
+import fs, { promises as fsp } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import fs from 'node:fs';
-import { promises as fsp } from 'node:fs';
 import type { GeneratedOperation } from './generated-command.js';
 
 export interface StoredRuntime {
@@ -13,7 +12,7 @@ export interface StoredRuntime {
 }
 
 function getHomeDir() {
-  return path.join(os.homedir(), '.nocobase-api-cli');
+  return path.join(process.env.NOCOBASE_CLI_HOME || process.cwd(), '.nocobase-cli');
 }
 
 export function getVersionsDir() {

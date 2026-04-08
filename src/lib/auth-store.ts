@@ -1,6 +1,6 @@
+import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { promises as fs } from 'node:fs';
 
 export interface ServerConfigEntry {
   baseUrl?: string;
@@ -27,7 +27,7 @@ const DEFAULT_CONFIG: AuthConfig = {
 };
 
 function getConfigFile() {
-  return path.join(os.homedir(), '.nocobase-api-cli', 'config.json');
+  return path.join(process.env.NOCOBASE_CLI_HOME || process.cwd(), '.nocobase-cli', 'config.json');
 }
 
 export async function loadAuthConfig(): Promise<AuthConfig> {
