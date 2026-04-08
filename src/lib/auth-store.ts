@@ -27,7 +27,7 @@ const DEFAULT_CONFIG: AuthConfig = {
 };
 
 function getConfigFile() {
-  return path.join(process.env.NOCOBASE_CLI_HOME || process.cwd(), '.nocobase-cli', 'config.json');
+  return path.join(process.env.NOCOBASE_CLI_HOME || os.homedir(), '.nocobase-cli', 'config.json');
 }
 
 export async function loadAuthConfig(): Promise<AuthConfig> {

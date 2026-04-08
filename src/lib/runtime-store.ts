@@ -12,7 +12,7 @@ export interface StoredRuntime {
 }
 
 function getHomeDir() {
-  return path.join(process.env.NOCOBASE_CLI_HOME || process.cwd(), '.nocobase-cli');
+  return path.join(process.env.NOCOBASE_CLI_HOME || os.homedir(), '.nocobase-cli');
 }
 
 export function getVersionsDir() {
