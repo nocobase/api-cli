@@ -15,7 +15,8 @@
   "license": "Apache-2.0",
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "nocobase-cli.config.json"
   ],
   "bin": {
     "nocobase": "./bin/run.js"
