@@ -265,8 +265,8 @@ export async function ensureRuntimeFromArgv(argv: string[], options: { configFil
     throw new Error(
       [
         'No env is configured for runtime commands.',
-        'Run `nocobase env add --name <name> --base-url <url> --token <token>` first.',
-        'If you configure multiple environments later, switch with `nocobase env use <name>`.',
+        'Run `nocobase-ctl env add --name <name> --base-url <url> --token <token>` first.',
+        'If you configure multiple environments later, switch with `nocobase-ctl env use <name>`.',
       ].join('\n'),
     );
   }
@@ -305,7 +305,7 @@ export async function updateEnvRuntime(options: {
     throw new Error(
       [
         `Env "${envName}" is missing a base URL.`,
-        'Update it with `nocobase env add --name <name> --base-url <url>` first.',
+        'Update it with `nocobase-ctl env add --name <name> --base-url <url>` first.',
       ].join('\n'),
     );
   }

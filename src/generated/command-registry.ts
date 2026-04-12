@@ -50,7 +50,7 @@ function createRuntimeIndexCommand(commandId: string, operation: any) {
     static description = operation.resourceDescription;
 
     async run(): Promise<void> {
-      this.log(`Use \`nocobase ${commandId} --help\` to view available subcommands.`);
+      this.log(`Use \`nocobase-ctl ${commandId} --help\` to view available subcommands.`);
     }
   };
 }
