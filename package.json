@@ -1,7 +1,7 @@
 {
-  "name": "nocobase",
+  "name": "@nocobase/ctl",
   "version": "0.1.5",
-  "description": "NocoBase CLI",
+  "description": "NocoBase Command Line Tool",
   "type": "module",
   "main": "dist/generated/command-registry.js",
   "scripts": {
@@ -16,13 +16,13 @@
   "files": [
     "bin",
     "dist",
-    "nocobase-cli.config.json"
+    "nocobase-ctl.config.json"
   ],
   "bin": {
     "nocobase": "./bin/run.js"
   },
   "oclif": {
-    "bin": "nocobase",
+    "bin": "nocobase-ctl",
     "additionalHelpFlags": [
       "-h"
     ],
@@ -30,7 +30,7 @@
       "strategy": "explicit",
       "target": "./dist/generated/command-registry.js"
     },
-    "dirname": "nocobase-cli",
+    "dirname": "nocobase-ctl",
     "topicSeparator": " ",
     "topics": {
       "env": {
@@ -55,7 +55,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nocobase/nocobase.git",
-    "directory": "nocobase-cli"
+    "url": "git+https://github.com/nocobase/ctl.git"
   }
 }

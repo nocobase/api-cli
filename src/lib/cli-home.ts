@@ -2,12 +2,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-export const CLI_HOME_DIRNAME = '.nocobase-cli';
+export const CLI_HOME_DIRNAME = '.nocobase-ctl';
 export type CliHomeScope = 'auto' | 'project' | 'global';
 
 function resolveGlobalCliHomeRoot() {
-  if (process.env.NOCOBASE_HOME_CLI) {
-    return process.env.NOCOBASE_HOME_CLI;
+  if (process.env.NOCOBASE_CTL_HOME) {
+    return process.env.NOCOBASE_CTL_HOME;
   }
 
   return os.homedir();

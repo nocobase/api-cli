@@ -47,7 +47,7 @@ export default class EnvUpdate extends Command {
         scope,
         baseUrl: flags['base-url'],
         token: flags.token,
-        configFile: path.join(path.dirname(path.dirname(path.dirname(__dirname))), 'nocobase-cli.config.json'),
+        configFile: path.join(path.dirname(path.dirname(path.dirname(__dirname))), 'nocobase-ctl.config.json'),
         verbose: flags.verbose,
       });
 
