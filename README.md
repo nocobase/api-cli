@@ -36,7 +36,7 @@ node ./bin/run.js --help
 After packaging or linking, the executable name is:
 
 ```bash
-nbctl
+nocobase-ctl
 ```
 
 ## Quick Start
@@ -44,40 +44,40 @@ nbctl
 Add an environment:
 
 ```bash
-nbctl env add --name local --base-url http://localhost:13000/api --token <token>
+nocobase-ctl env add --name local --base-url http://localhost:13000/api --token <token>
 ```
 
 Show the current environment:
 
 ```bash
-nbctl env
+nocobase-ctl env
 ```
 
 List configured environments:
 
 ```bash
-nbctl env list
+nocobase-ctl env list
 ```
 
 Switch the current environment:
 
 ```bash
-nbctl env use local
+nocobase-ctl env use local
 ```
 
 Update the runtime command cache from `swagger:get`:
 
 ```bash
-nbctl env update
-nbctl env update -e local
+nocobase-ctl env update
+nocobase-ctl env update -e local
 ```
 
 Use the generic resource commands:
 
 ```bash
-nbctl resource list --resource users
-nbctl resource get --resource users --filter-by-tk 1
-nbctl resource create --resource users --values '{"nickname":"Ada"}'
+nocobase-ctl resource list --resource users
+nocobase-ctl resource get --resource users --filter-by-tk 1
+nocobase-ctl resource create --resource users --values '{"nickname":"Ada"}'
 ```
 
 ## Runtime Commands
@@ -96,14 +96,14 @@ If the `API documentation plugin` is disabled, the CLI will prompt to enable it.
 Use `-e, --env` to temporarily select an environment:
 
 ```bash
-nbctl env update -e prod
-nbctl resource list --resource users -e prod
+nocobase-ctl env update -e prod
+nocobase-ctl resource list --resource users -e prod
 ```
 
 This does not change the current environment unless you explicitly run:
 
 ```bash
-nbctl env use <name>
+nocobase-ctl env use <name>
 ```
 
 ## Config Scope
@@ -116,9 +116,9 @@ The `env` command supports two config scopes:
 Use `-s, --scope` to select one explicitly:
 
 ```bash
-nbctl env list -s project
-nbctl env add -s global --name prod --base-url http://example.com/api --token <token>
-nbctl env use local -s project
+nocobase-ctl env list -s project
+nocobase-ctl env add -s global --name prod --base-url http://example.com/api --token <token>
+nocobase-ctl env use local -s project
 ```
 
 If you do not pass `--scope`, the CLI uses automatic resolution:
@@ -137,9 +137,9 @@ Current built-in topics:
 Check available commands at any time:
 
 ```bash
-nbctl --help
-nbctl env --help
-nbctl resource --help
+nocobase-ctl --help
+nocobase-ctl env --help
+nocobase-ctl resource --help
 ```
 
 ## Common Flags
@@ -152,8 +152,8 @@ nbctl resource --help
 Example:
 
 ```bash
-nbctl env update -e prod -s global
-nbctl resource list --resource users -e prod -j
+nocobase-ctl env update -e prod -s global
+nocobase-ctl resource list --resource users -e prod -j
 ```
 
 ## Local Data
