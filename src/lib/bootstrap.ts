@@ -1,5 +1,6 @@
 import { getCurrentEnvName, getEnv, setEnvRuntime } from './auth-store.ts';
 import type { CliHomeScope } from './cli-home.ts';
+import { resolveAccessToken } from './env-auth.ts';
 import { generateRuntime } from './runtime-generator.ts';
 import { hasRuntimeSync, saveRuntime } from './runtime-store.ts';
 import { confirmAction, printInfo, printVerbose, printWarning, setVerboseMode, stopTask, updateTask } from './ui.ts';
@@ -83,10 +84,13 @@ export function shouldSkipRuntimeBootstrap(argv: string[]) {
   return hasVersionFlag(argv) || isBuiltinCommand(argv);
 }
 
-async function requestJson(url: string, options: { method?: string; token?: string }) {
+async function requestJson(url: string, options: { method?: string; token?: string; role?: string }) {
   const headers = new Headers();
   if (options.token) {
     headers.set('authorization', `Bearer ${options.token}`);
+  }
+  if (options.role) {
+    headers.set('x-role', options.role);
   }
 
   let response: Response;
@@ -145,7 +149,7 @@ function getHealthCheckUrl(baseUrl: string) {
   return `${baseUrl.replace(/\/+$/, '')}/__health_check`;
 }
 
-async function waitForServiceReady(baseUrl: string, token?: string) {
+async function waitForServiceReady(baseUrl: string, token?: string, role?: string) {
   const healthCheckUrl = getHealthCheckUrl(baseUrl);
   const startedAt = Date.now();
   let notified = false;
@@ -153,7 +157,13 @@ async function waitForServiceReady(baseUrl: string, token?: string) {
   while (Date.now() - startedAt < APP_RETRY_TIMEOUT) {
     const response = await fetch(healthCheckUrl, {
       method: 'GET',
-      headers: token ? { authorization: `Bearer ${token}` } : undefined,
+      headers:
+        token || role
+          ? {
+              ...(token ? { authorization: `Bearer ${token}` } : undefined),
+              ...(role ? { 'x-role': role } : undefined),
+            }
+          : undefined,
     }).catch((error: any) => {
       return {
         ok: false,
@@ -179,14 +189,14 @@ async function waitForServiceReady(baseUrl: string, token?: string) {
   throw new Error(`The application did not become ready in time. Expected \`${healthCheckUrl}\` to respond with \`ok\`.`);
 }
 
-async function waitForSwaggerSchema(baseUrl: string, token?: string) {
+async function waitForSwaggerSchema(baseUrl: string, token?: string, role?: string) {
   const swaggerUrl = getSwaggerUrl(baseUrl);
   const startedAt = Date.now();
 
   printVerbose(`Checking swagger schema: ${swaggerUrl}`);
 
   while (Date.now() - startedAt < APP_RETRY_TIMEOUT) {
-    const response = await requestJson(swaggerUrl, { token });
+    const response = await requestJson(swaggerUrl, { token, role });
     if (response.ok) {
       return response;
     }
@@ -195,10 +205,10 @@ async function waitForSwaggerSchema(baseUrl: string, token?: string) {
       return response;
     }
 
-    await waitForServiceReady(baseUrl, token);
+    await waitForServiceReady(baseUrl, token, role);
   }
 
-  return await requestJson(swaggerUrl, { token });
+  return await requestJson(swaggerUrl, { token, role });
 }
 
 async function confirmEnableApiDoc() {
@@ -208,6 +218,7 @@ async function confirmEnableApiDoc() {
 async function fetchSwaggerSchema(
   baseUrl: string,
   token?: string,
+  role?: string,
   context: {
     envName?: string;
     commandToken?: string;
@@ -218,7 +229,9 @@ async function fetchSwaggerSchema(
   } = {},
 ) {
   let response =
-    options.retryAppAvailability === false ? await requestJson(getSwaggerUrl(baseUrl), { token }) : await waitForSwaggerSchema(baseUrl, token);
+    options.retryAppAvailability === false
+      ? await requestJson(getSwaggerUrl(baseUrl), { token, role })
+      : await waitForSwaggerSchema(baseUrl, token, role);
 
   if (response.status === 404) {
     if (options.allowEnableApiDoc === false) {
@@ -233,7 +246,7 @@ async function fetchSwaggerSchema(
 
     const enableUrl = `${baseUrl.replace(/\/+$/, '')}/pm:enable?filterByTk=api-doc`;
     printVerbose(`Enabling API documentation plugin via ${enableUrl}`);
-    const enableResponse = await requestJson(enableUrl, { method: 'POST', token });
+    const enableResponse = await requestJson(enableUrl, { method: 'POST', token, role });
     if (!enableResponse.ok) {
       throw new Error(
         `Failed to enable the \`API documentation plugin\` via \`pm:enable\`.\n${JSON.stringify(enableResponse.data, null, 2)}`,
@@ -241,8 +254,8 @@ async function fetchSwaggerSchema(
     }
 
     updateTask('Enabled the API documentation plugin. Waiting for application readiness...');
-    await waitForServiceReady(baseUrl, token);
-    response = await waitForSwaggerSchema(baseUrl, token);
+    await waitForServiceReady(baseUrl, token, role);
+    response = await waitForSwaggerSchema(baseUrl, token, role);
   }
 
   if (!response.ok) {
@@ -270,7 +283,7 @@ function hasInvalidTokenError(data: any) {
 
 export function formatSwaggerSchemaError(
   response: { status: number; data: any },
-  context: { baseUrl: string; token?: string; envName?: string; commandToken?: string },
+  context: { baseUrl: string; token?: string; role?: string; envName?: string; commandToken?: string },
 ) {
   if (hasInvalidTokenError(response.data)) {
     const entries = collectErrorEntries(response.data);
@@ -289,7 +302,7 @@ export function formatSwaggerSchemaError(
       `Authentication failed while loading the command runtime from \`swagger:get\`${envLabel}.`,
       `Base URL: ${context.baseUrl}`,
       details,
-      'Update the token with `nocobase-ctl env add --name <name> --base-url <url> --token <token>` or rerun the command with `--token <token>`.',
+      'Update the API key with `nocobase-ctl env add --name <name> --base-url <url> --token <api-key>`, log in with `nocobase-ctl env auth -e <name>`, or rerun the command with `--token <api-key>`.',
       commandHint,
     ].join('\n');
   }
@@ -301,7 +314,7 @@ export function formatMissingRuntimeEnvError(commandToken?: string) {
   if (!commandToken) {
     return [
       'No env is configured for runtime commands.',
-      'Run `nocobase-ctl env add --name <name> --base-url <url> --token <token>` first.',
+      'Run `nocobase-ctl env add --name <name> --base-url <url>` first.',
       'If you configure multiple environments later, switch with `nocobase-ctl env use <name>`.',
     ].join('\n');
   }
@@ -310,7 +323,7 @@ export function formatMissingRuntimeEnvError(commandToken?: string) {
     `Unable to resolve runtime command \`${commandToken}\`.`,
     'No env is configured, so the CLI cannot load runtime commands from `swagger:get`.',
     'If this is a built-in command or a typo, run `nocobase-ctl --help` to inspect available commands.',
-    'If this should be an application runtime command, run `nocobase-ctl env add --name <name> --base-url <url> --token <token>` and then `nocobase-ctl env update`.',
+    'If this should be an application runtime command, run `nocobase-ctl env add --name <name> --base-url <url>` and then `nocobase-ctl env update`.',
   ].join('\n');
 }
 
@@ -326,7 +339,12 @@ export async function ensureRuntimeFromArgv(argv: string[], options: { configFil
   const envName = readFlag(argv, 'env') ?? (await getCurrentEnvName());
   const env = await getEnv(envName);
   const baseUrl = readFlag(argv, 'base-url') ?? env?.baseUrl;
-  const token = readFlag(argv, 'token') ?? env?.auth?.accessToken;
+  const role = readFlag(argv, 'role');
+  const token = await resolveAccessToken({
+    envName,
+    baseUrl,
+    token: readFlag(argv, 'token'),
+  });
   const runtimeVersion = env?.runtime?.version;
 
   if (runtimeVersion && hasRuntimeSync(runtimeVersion)) {
@@ -346,6 +364,7 @@ export async function ensureRuntimeFromArgv(argv: string[], options: { configFil
     const document = await fetchSwaggerSchema(
       baseUrl,
       token,
+      role,
       { envName, commandToken },
       isRootInvocation
         ? {
@@ -377,6 +396,7 @@ export async function updateEnvRuntime(options: {
   envName?: string;
   baseUrl?: string;
   token?: string;
+  role?: string;
   configFile: string;
   verbose?: boolean;
   scope?: CliHomeScope;
@@ -385,7 +405,12 @@ export async function updateEnvRuntime(options: {
   const envName = options.envName ?? (await getCurrentEnvName({ scope: options.scope }));
   const env = await getEnv(envName, { scope: options.scope });
   const baseUrl = options.baseUrl ?? env?.baseUrl;
-  const token = options.token ?? env?.auth?.accessToken;
+  const token = await resolveAccessToken({
+    envName,
+    baseUrl,
+    token: options.token,
+    scope: options.scope,
+  });
 
   if (!baseUrl) {
     throw new Error(
@@ -399,7 +424,7 @@ export async function updateEnvRuntime(options: {
   updateTask('Loading command runtime...');
   try {
     printVerbose(`Runtime source: ${baseUrl}`);
-    const document = await fetchSwaggerSchema(baseUrl, token, { envName });
+    const document = await fetchSwaggerSchema(baseUrl, token, options.role, { envName });
     const runtime = await generateRuntime(document, options.configFile, baseUrl);
     await saveRuntime(runtime, { scope: options.scope });
     await setEnvRuntime(envName, {

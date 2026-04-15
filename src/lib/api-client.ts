@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs';
-import { getCurrentEnvName, getEnv } from './auth-store.ts';
+import { resolveServerRequestTarget } from './env-auth.ts';
 
 export interface RequestParameter {
   name: string;
@@ -24,6 +24,7 @@ export interface RequestOptions {
   envName?: string;
   baseUrl?: string;
   token?: string;
+  role?: string;
   flags: Record<string, any>;
   operation: RequestOperation;
 }
@@ -32,6 +33,7 @@ export interface RawRequestOptions {
   envName?: string;
   baseUrl?: string;
   token?: string;
+  role?: string;
   method: string;
   path: string;
   query?: Record<string, any>;
@@ -41,23 +43,6 @@ export interface RawRequestOptions {
 
 function normalizeBaseUrl(baseUrl: string) {
   return baseUrl.replace(/\/+$/, '');
-}
-
-async function resolveServerRequestTarget(options: {
-  envName?: string;
-  baseUrl?: string;
-  token?: string;
-}) {
-  const envName = options.envName ?? (await getCurrentEnvName());
-  const env = await getEnv(envName);
-  const baseUrl = options.baseUrl ?? env?.baseUrl;
-  const token = options.token ?? env?.auth?.accessToken;
-
-  if (!baseUrl) {
-    throw new Error('Missing base URL. Use --base-url or configure one with `nocobase-ctl env add`.');
-  }
-
-  return { baseUrl, token };
 }
 
 async function parseResponse(response: Response) {
@@ -180,6 +165,9 @@ export async function executeApiRequest(options: RequestOptions) {
   if (token) {
     headers.set('authorization', `Bearer ${token}`);
   }
+  if (options.role) {
+    headers.set('x-role', options.role);
+  }
 
   const query = new URLSearchParams();
   let requestPath = options.operation.pathTemplate;
@@ -247,6 +235,9 @@ export async function executeRawApiRequest(options: RawRequestOptions) {
   const headers = new Headers();
   if (token) {
     headers.set('authorization', `Bearer ${token}`);
+  }
+  if (options.role) {
+    headers.set('x-role', options.role);
   }
 
   for (const [name, value] of Object.entries(options.headers ?? {})) {

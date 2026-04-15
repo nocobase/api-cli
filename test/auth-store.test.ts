@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { getEnv, saveAuthConfig, upsertEnv } from '../src/lib/auth-store.ts';
+import { getEnv, saveAuthConfig, setEnvOauthSession, upsertEnv } from '../src/lib/auth-store.ts';
 
 async function withTempCliHome(run: () => Promise<void>) {
   const previous = process.env.NOCOBASE_CTL_HOME;
@@ -79,6 +79,101 @@ test('upsertEnv preserves runtime metadata when connection settings are unchange
     await upsertEnv('test', 'http://localhost:13000/api', 'same-token', { scope: 'global' });
 
     const env = await getEnv('test', { scope: 'global' });
+    assert.deepEqual(env?.runtime, {
+      version: 'v1',
+      schemaHash: 'hash',
+      generatedAt: '2026-04-13T00:00:00.000Z',
+    });
+  });
+});
+
+test('upsertEnv allows saving an env without a token', async () => {
+  await withTempCliHome(async () => {
+    await upsertEnv('test', 'http://localhost:13000/api', undefined, { scope: 'global' });
+
+    const env = await getEnv('test', { scope: 'global' });
+    assert.equal(env?.baseUrl, 'http://localhost:13000/api');
+    assert.equal(env?.auth, undefined);
+  });
+});
+
+test('upsertEnv clears an OAuth session when the base URL changes', async () => {
+  await withTempCliHome(async () => {
+    await saveAuthConfig(
+      {
+        currentEnv: 'test',
+        envs: {
+          test: {
+            baseUrl: 'http://localhost:13000/api',
+            auth: {
+              type: 'oauth',
+              accessToken: 'oauth-token',
+              refreshToken: 'refresh-token',
+              issuer: 'http://localhost:13000/api',
+              clientId: 'client-1',
+              resource: 'http://localhost:13000/api/',
+            },
+          },
+        },
+      },
+      { scope: 'global' },
+    );
+
+    await upsertEnv('test', 'http://localhost:14000/api', undefined, { scope: 'global' });
+
+    const env = await getEnv('test', { scope: 'global' });
+    assert.equal(env?.baseUrl, 'http://localhost:14000/api');
+    assert.equal(env?.auth, undefined);
+  });
+});
+
+test('setEnvOauthSession can preserve runtime metadata during token refresh', async () => {
+  await withTempCliHome(async () => {
+    await saveAuthConfig(
+      {
+        currentEnv: 'test',
+        envs: {
+          test: {
+            baseUrl: 'http://localhost:13000/api',
+            auth: {
+              type: 'oauth',
+              accessToken: 'old-access-token',
+              refreshToken: 'refresh-token',
+              expiresAt: '2026-04-13T00:00:00.000Z',
+              scope: 'openid api offline_access',
+              issuer: 'http://localhost:13000/api',
+              clientId: 'client-1',
+              resource: 'http://localhost:13000/api/',
+            },
+            runtime: {
+              version: 'v1',
+              schemaHash: 'hash',
+              generatedAt: '2026-04-13T00:00:00.000Z',
+            },
+          },
+        },
+      },
+      { scope: 'global' },
+    );
+
+    await setEnvOauthSession(
+      'test',
+      {
+        type: 'oauth',
+        accessToken: 'new-access-token',
+        refreshToken: 'refresh-token',
+        expiresAt: '2026-04-14T00:00:00.000Z',
+        scope: 'openid api offline_access',
+        issuer: 'http://localhost:13000/api',
+        clientId: 'client-1',
+        resource: 'http://localhost:13000/api/',
+      },
+      { scope: 'global', preserveRuntime: true },
+    );
+
+    const env = await getEnv('test', { scope: 'global' });
+    assert.equal(env?.auth?.type, 'oauth');
+    assert.equal(env?.auth?.accessToken, 'new-access-token');
     assert.deepEqual(env?.runtime, {
       version: 'v1',
       schemaHash: 'hash',

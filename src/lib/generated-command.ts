@@ -90,9 +90,12 @@ export function createGeneratedFlags(operation: GeneratedOperation): Interfaces.
       char: 'e',
       description: 'Environment name',
     }),
+    role: Flags.string({
+      description: 'Role override, sent as X-Role',
+    }),
     token: Flags.string({
       char: 't',
-      description: 'Bearer token override',
+      description: 'API key override',
     }),
     'json-output': Flags.boolean({
       char: 'j',
@@ -137,6 +140,7 @@ export abstract class GeneratedApiCommand extends Command {
     const response = await executeApiRequest({
       envName: flags.env,
       baseUrl: flags['base-url'],
+      role: flags.role,
       token: flags.token,
       flags,
       operation: {

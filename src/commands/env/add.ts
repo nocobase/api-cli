@@ -26,7 +26,7 @@ export default class EnvAdd extends Command {
     }),
     token: Flags.string({
       char: 't',
-      description: 'Bearer token',
+      description: 'API key',
     }),
   };
 
@@ -42,14 +42,10 @@ export default class EnvAdd extends Command {
         : '');
     const token =
       flags.token ||
-      (isInteractiveTerminal() ? await promptText('Bearer token', { secret: true }) : '');
+      (isInteractiveTerminal() ? await promptText('API key (optional)', { secret: true }) : '');
 
     if (!baseUrl) {
       this.error('Missing base URL. Pass `--base-url <url>` or run in a TTY to enter it interactively.');
-    }
-
-    if (!token) {
-      this.error('Missing token. Pass `--token <token>` or run in a TTY to enter it interactively.');
     }
 
     printVerbose(`Saving env "${name}" with base URL ${baseUrl}`);

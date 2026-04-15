@@ -113,9 +113,12 @@ export const resourceBaseFlags = {
     char: 'e',
     description: 'Environment name',
   }),
+  role: Flags.string({
+    description: 'Role override, sent as X-Role',
+  }),
   token: Flags.string({
     char: 't',
-    description: 'Bearer token override',
+    description: 'API key override',
   }),
   'json-output': Flags.boolean({
     char: 'j',
@@ -378,6 +381,7 @@ export async function runResourceCommand(
   const response = await executeResourceRequest({
     envName: flags.env,
     baseUrl: flags['base-url'],
+    role: flags.role,
     token: flags.token,
     action,
     args,

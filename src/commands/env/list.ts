@@ -23,15 +23,15 @@ export default class EnvList extends Command {
 
     if (!names.length) {
       this.log(`No envs configured${scope ? ` in ${formatCliHomeScope(scope)} scope` : ''}.`);
-      this.log('Run `nocobase-ctl env add --name <name> --base-url <url> --token <token>` to add one.');
+      this.log('Run `nocobase-ctl env add --name <name> --base-url <url>` to add one.');
       return;
     }
 
     const rows = names.map((name) => {
       const env = envs[name];
-      return [name === currentEnv ? '*' : '', name, env.baseUrl ?? '', env.runtime?.version ?? ''];
+      return [name === currentEnv ? '*' : '', name, env.baseUrl ?? '', env.auth?.type ?? '', env.runtime?.version ?? ''];
     });
 
-    this.log(renderTable(['Current', 'Name', 'Base URL', 'Runtime'], rows));
+    this.log(renderTable(['Current', 'Name', 'Base URL', 'Auth', 'Runtime'], rows));
   }
 }

@@ -1,5 +1,6 @@
 import { Command } from '@oclif/core';
 import EnvAdd from '../commands/env/add.ts';
+import EnvAuth from '../commands/env/auth.ts';
 import Env from '../commands/env/index.ts';
 import EnvList from '../commands/env/list.ts';
 import EnvRemove from '../commands/env/remove.ts';
@@ -58,6 +59,7 @@ function createRuntimeIndexCommand(commandId: string, operation: any) {
 const registry: Record<string, any> = {
   env: Env,
   'env:add': EnvAdd,
+  'env:auth': EnvAuth,
   'env:list': EnvList,
   'env:remove': EnvRemove,
   'env:update': EnvUpdate,

@@ -144,6 +144,7 @@ export async function executeResourceRequest(options: {
   envName?: string;
   baseUrl?: string;
   token?: string;
+  role?: string;
   action: ResourceAction;
   args: ResourceRequestArgs;
 }) {
@@ -152,6 +153,7 @@ export async function executeResourceRequest(options: {
   return executeRawApiRequest({
     envName: options.envName,
     baseUrl: options.baseUrl,
+    role: options.role,
     token: options.token,
     method: 'POST',
     path,

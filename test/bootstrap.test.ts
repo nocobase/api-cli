@@ -37,7 +37,7 @@ test('formatSwaggerSchemaError returns actionable guidance for invalid tokens', 
   assert.match(message, /Authentication failed while loading the command runtime/);
   assert.match(message, /env "local"/);
   assert.match(message, /INVALID_TOKEN/);
-  assert.match(message, /env add --name <name> --base-url <url> --token <token>/);
+  assert.match(message, /env add --name <name> --base-url <url> --token <api-key>/);
   assert.match(message, /nocobase-ctl env update/);
   assert.match(message, /nocobase-ctl --help/);
 });
