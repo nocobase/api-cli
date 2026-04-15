@@ -3,13 +3,25 @@ import path from 'node:path';
 import type { CliHomeScope } from './cli-home.ts';
 import { resolveCliHomeDir } from './cli-home.ts';
 
+export interface TokenAuthConfig {
+  type: 'token';
+  accessToken: string;
+}
+
+export interface OauthAuthConfig {
+  type: 'oauth';
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  scope?: string;
+  issuer?: string;
+  clientId?: string;
+  resource?: string;
+}
+
 export interface EnvConfigEntry {
   baseUrl?: string;
-  auth?: {
-    type: 'token' | 'oauth';
-    accessToken?: string;
-    refreshToken?: string;
-  };
+  auth?: TokenAuthConfig | OauthAuthConfig;
   runtime?: {
     version?: string;
     schemaHash?: string;
@@ -43,7 +55,7 @@ export async function loadAuthConfig(options: AuthStoreOptions = {}): Promise<Au
       currentEnv: parsed.currentEnv || 'default',
       envs: parsed.envs || {},
     };
-  } catch (error) {
+  } catch (_error) {
     return DEFAULT_CONFIG;
   }
 }
@@ -82,23 +94,75 @@ export async function getEnv(envName?: string, options: AuthStoreOptions = {}) {
   return config.envs[resolved];
 }
 
-export async function upsertEnv(envName: string, baseUrl: string, accessToken: string, options: AuthStoreOptions = {}) {
+function areAuthConfigsEquivalent(left?: EnvConfigEntry['auth'], right?: EnvConfigEntry['auth']) {
+  if (!left && !right) {
+    return true;
+  }
+
+  if (!left || !right || left.type !== right.type) {
+    return false;
+  }
+
+  if (left.type === 'token' && right.type === 'token') {
+    return left.accessToken === right.accessToken;
+  }
+
+  if (left.type === 'oauth' && right.type === 'oauth') {
+    return (
+      left.accessToken === right.accessToken &&
+      left.refreshToken === right.refreshToken &&
+      left.expiresAt === right.expiresAt &&
+      left.scope === right.scope &&
+      left.issuer === right.issuer &&
+      left.clientId === right.clientId &&
+      left.resource === right.resource
+    );
+  }
+
+  return false;
+}
+
+async function writeEnv(
+  envName: string,
+  updater: (previous: EnvConfigEntry | undefined) => EnvConfigEntry,
+  options: AuthStoreOptions = {},
+) {
   const config = await loadAuthConfig(options);
   const previous = config.envs[envName];
-  const baseUrlChanged = previous?.baseUrl !== baseUrl;
-  const tokenChanged = previous?.auth?.accessToken !== accessToken;
-
-  config.envs[envName] = {
-    ...previous,
-    baseUrl,
-    auth: {
-      type: 'token',
-      accessToken,
-    },
-    runtime: baseUrlChanged || tokenChanged ? undefined : previous?.runtime,
-  };
+  config.envs[envName] = updater(previous);
   config.currentEnv = envName;
   await saveAuthConfig(config, options);
+}
+
+export async function upsertEnv(
+  envName: string,
+  baseUrl: string,
+  accessToken?: string,
+  options: AuthStoreOptions = {},
+) {
+  await writeEnv(
+    envName,
+    (previous) => {
+      const baseUrlChanged = previous?.baseUrl !== baseUrl;
+      const nextAuth = accessToken
+        ? ({
+            type: 'token',
+            accessToken,
+          } satisfies TokenAuthConfig)
+        : baseUrlChanged || previous?.auth?.type === 'token'
+          ? undefined
+          : previous?.auth;
+      const authChanged = !areAuthConfigsEquivalent(previous?.auth, nextAuth);
+
+      return {
+        ...previous,
+        baseUrl,
+        auth: nextAuth,
+        runtime: baseUrlChanged || authChanged ? undefined : previous?.runtime,
+      };
+    },
+    options,
+  );
 }
 
 export async function updateEnvConnection(
@@ -106,28 +170,46 @@ export async function updateEnvConnection(
   updates: { baseUrl?: string; accessToken?: string },
   options: AuthStoreOptions = {},
 ) {
-  const config = await loadAuthConfig(options);
-  const previous = config.envs[envName];
-  const nextBaseUrl = updates.baseUrl ?? previous?.baseUrl;
-  const nextAccessToken = updates.accessToken ?? previous?.auth?.accessToken;
-  const baseUrlChanged = previous?.baseUrl !== nextBaseUrl;
-  const tokenChanged = previous?.auth?.accessToken !== nextAccessToken;
-
-  config.envs[envName] = {
-    ...previous,
-    ...(nextBaseUrl !== undefined ? { baseUrl: nextBaseUrl } : {}),
-    ...(nextAccessToken !== undefined
-      ? {
-          auth: {
+  await writeEnv(
+    envName,
+    (previous) => {
+      const nextBaseUrl = updates.baseUrl ?? previous?.baseUrl;
+      const baseUrlChanged = previous?.baseUrl !== nextBaseUrl;
+      const nextAuth = updates.accessToken
+        ? ({
             type: 'token',
-            accessToken: nextAccessToken,
-          } as const,
-        }
-      : {}),
-    runtime: baseUrlChanged || tokenChanged ? undefined : previous?.runtime,
-  };
-  config.currentEnv = envName;
-  await saveAuthConfig(config, options);
+            accessToken: updates.accessToken,
+          } satisfies TokenAuthConfig)
+        : baseUrlChanged || previous?.auth?.type === 'token'
+          ? undefined
+          : previous?.auth;
+      const authChanged = !areAuthConfigsEquivalent(previous?.auth, nextAuth);
+
+      return {
+        ...previous,
+        ...(nextBaseUrl !== undefined ? { baseUrl: nextBaseUrl } : {}),
+        auth: nextAuth,
+        runtime: baseUrlChanged || authChanged ? undefined : previous?.runtime,
+      };
+    },
+    options,
+  );
+}
+
+export async function setEnvOauthSession(
+  envName: string,
+  auth: OauthAuthConfig,
+  options: AuthStoreOptions & { preserveRuntime?: boolean } = {},
+) {
+  await writeEnv(
+    envName,
+    (previous) => ({
+      ...previous,
+      auth,
+      runtime: options.preserveRuntime ? previous?.runtime : undefined,
+    }),
+    options,
+  );
 }
 
 export async function setEnvRuntime(

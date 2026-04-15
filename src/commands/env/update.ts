@@ -28,9 +28,12 @@ export default class EnvUpdate extends Command {
     'base-url': Flags.string({
       description: 'NocoBase API base URL override. When provided, persist it to the target env before saving the refreshed runtime.',
     }),
+    role: Flags.string({
+      description: 'Role override, sent as X-Role',
+    }),
     token: Flags.string({
       char: 't',
-      description: 'Bearer token override. When provided, persist it to the target env before saving the refreshed runtime.',
+      description: 'API key override. When provided, persist it to the target env before saving the refreshed runtime.',
     }),
   };
 
@@ -46,6 +49,7 @@ export default class EnvUpdate extends Command {
         envName: flags.env,
         scope,
         baseUrl: flags['base-url'],
+        role: flags.role,
         token: flags.token,
         configFile: path.join(path.dirname(path.dirname(path.dirname(__dirname))), 'nocobase-ctl.config.json'),
         verbose: flags.verbose,

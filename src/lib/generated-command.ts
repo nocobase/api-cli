@@ -131,9 +131,13 @@ export function createGeneratedFlags(operation: GeneratedOperation): Interfaces.
     description: 'Environment name',
     helpGroup: 'Global',
   });
+  flags.role = Flags.string({
+    description: 'Role override, sent as X-Role',
+    helpGroup: 'Global',
+  });
   flags.token = Flags.string({
     char: 't',
-    description: 'Bearer token override',
+    description: 'API key override',
     helpGroup: 'Global',
   });
   flags['json-output'] = Flags.boolean({
@@ -159,6 +163,7 @@ export abstract class GeneratedApiCommand extends Command {
     const response = await executeApiRequest({
       envName: flags.env,
       baseUrl: flags['base-url'],
+      role: flags.role,
       token: flags.token,
       flags,
       operation: {

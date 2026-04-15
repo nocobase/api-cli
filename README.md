@@ -35,7 +35,19 @@ npm install -g @nocobase/ctl@latest
 Add an environment:
 
 ```bash
-nocobase-ctl env add --name local --base-url http://localhost:13000/api --token <token>
+nocobase-ctl env add --name local --base-url http://localhost:13000/api
+```
+
+Add an environment with an API key:
+
+```bash
+nocobase-ctl env add --name local --base-url http://localhost:13000/api --token <api-key>
+```
+
+Authenticate an environment with OAuth:
+
+```bash
+nocobase-ctl env auth -e local
 ```
 
 Show the current environment:
@@ -108,7 +120,8 @@ Use `-s, --scope` to select one explicitly:
 
 ```bash
 nocobase-ctl env list -s project
-nocobase-ctl env add -s global --name prod --base-url http://example.com/api --token <token>
+nocobase-ctl env add -s global --name prod --base-url http://example.com/api --token <api-key>
+nocobase-ctl env auth -e prod -s global
 nocobase-ctl env use local -s project
 ```
 
@@ -137,7 +150,8 @@ nocobase-ctl resource --help
 
 - `-e, --env`: temporary environment selection
 - `-s, --scope`: config scope for `env` commands
-- `-t, --token`: token override
+- `--role`: role override, sent as `X-Role`
+- `-t, --token`: API key override
 - `-j, --json-output`: print raw JSON response
 
 Example:
@@ -145,6 +159,7 @@ Example:
 ```bash
 nocobase-ctl env update -e prod -s global
 nocobase-ctl resource list --resource users -e prod -j
+nocobase-ctl resource list --resource users -e prod --role admin
 ```
 
 ## Local Data
