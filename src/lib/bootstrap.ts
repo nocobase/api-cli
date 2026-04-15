@@ -1,4 +1,4 @@
-import { getCurrentEnvName, getEnv, setEnvRuntime } from './auth-store.ts';
+import { getCurrentEnvName, getEnv, setEnvRuntime, updateEnvConnection } from './auth-store.ts';
 import type { CliHomeScope } from './cli-home.ts';
 import { generateRuntime } from './runtime-generator.ts';
 import { hasRuntimeSync, saveRuntime } from './runtime-store.ts';
@@ -402,6 +402,16 @@ export async function updateEnvRuntime(options: {
     const document = await fetchSwaggerSchema(baseUrl, token, { envName });
     const runtime = await generateRuntime(document, options.configFile, baseUrl);
     await saveRuntime(runtime, { scope: options.scope });
+    if (options.baseUrl !== undefined || options.token !== undefined) {
+      await updateEnvConnection(
+        envName,
+        {
+          baseUrl: options.baseUrl,
+          accessToken: options.token,
+        },
+        { scope: options.scope },
+      );
+    }
     await setEnvRuntime(envName, {
       version: runtime.version,
       schemaHash: runtime.schemaHash,

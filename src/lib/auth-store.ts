@@ -101,6 +101,35 @@ export async function upsertEnv(envName: string, baseUrl: string, accessToken: s
   await saveAuthConfig(config, options);
 }
 
+export async function updateEnvConnection(
+  envName: string,
+  updates: { baseUrl?: string; accessToken?: string },
+  options: AuthStoreOptions = {},
+) {
+  const config = await loadAuthConfig(options);
+  const previous = config.envs[envName];
+  const nextBaseUrl = updates.baseUrl ?? previous?.baseUrl;
+  const nextAccessToken = updates.accessToken ?? previous?.auth?.accessToken;
+  const baseUrlChanged = previous?.baseUrl !== nextBaseUrl;
+  const tokenChanged = previous?.auth?.accessToken !== nextAccessToken;
+
+  config.envs[envName] = {
+    ...previous,
+    ...(nextBaseUrl !== undefined ? { baseUrl: nextBaseUrl } : {}),
+    ...(nextAccessToken !== undefined
+      ? {
+          auth: {
+            type: 'token',
+            accessToken: nextAccessToken,
+          } as const,
+        }
+      : {}),
+    runtime: baseUrlChanged || tokenChanged ? undefined : previous?.runtime,
+  };
+  config.currentEnv = envName;
+  await saveAuthConfig(config, options);
+}
+
 export async function setEnvRuntime(
   envName: string,
   runtime: EnvConfigEntry['runtime'],
